@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Clawd Customizer</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #f8f8f8;
+  color: #222;
+  font-family: 'Segoe UI', monospace;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 40px 20px;
+}
+
+h1 { font-size: 22px; letter-spacing: 3px; margin-bottom: 8px; color: #e07855; }
+.subtitle { font-size: 12px; color: #aaa; margin-bottom: 40px; letter-spacing: 1px; }
+
+.workspace {
+  display: flex;
+  gap: 60px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* ── Preview ── */
+.preview-box { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+.preview-frame {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  padding: 24px 28px;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+svg { image-rendering: pixelated; }
+.clawd-body rect { fill: var(--clawd-body, #e07855); }
+.clawd-eyes rect { fill: var(--clawd-eye,  #1a0a00); }
+.preview-label { font-size: 11px; color: #ccc; letter-spacing: 1px; }
+
+/* ── Clawd orange box ── */
+.clawd-box {
+  border: 3px solid #e07855;
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+}
+.clawd-box-label {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: #e07855;
+  font-weight: bold;
+}
+
+/* ── Controls ── */
+.controls { display: flex; flex-direction: column; gap: 20px; width: 280px; }
+.section-label {
+  font-size: 11px; letter-spacing: 2px; color: #bbb;
+  text-transform: uppercase; margin-bottom: 4px;
+}
+
+/* ── Color Picker ── */
+.picker-card {
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.picker-tabs { display: flex; gap: 8px; align-items: center; }
+.picker-tab {
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  border: 1px solid #ddd;
+  background: #efefef;
+  color: #aaa;
+  transition: all 0.15s;
+}
+.picker-tab.active { background: #e0e0e0; color: #222; border-color: #bbb; }
+.btn-tab-reset {
+  margin-left: auto;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  border: 1px solid #e07855;
+  background: #fff5f0;
+  color: #e07855;
+  transition: all 0.15s;
+}
+.btn-tab-reset:hover { background: #ffe0d0; }
+
+/* Top row: preview swatch + hex input */
+.picker-top { display: flex; align-items: center; gap: 10px; }
+.swatch {
+  width: 36px; height: 36px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  flex-shrink: 0;
+}
+.hex-input {
+  flex: 1;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  color: #222;
+  font-family: monospace;
+  font-size: 13px;
+  padding: 6px 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.hex-input:focus { outline: none; border-color: #bbb; }
+.btn-apply {
+  padding: 6px 14px;
+  background: #e8f0ff;
+  border: 1px solid #aac4e8;
+  border-radius: 6px;
+  color: #2a5080;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.btn-apply:hover { background: #d5e4f8; }
+
+/* Gradient canvas */
+.gradient-canvas {
+  width: 100%; height: 140px;
+  border-radius: 6px;
+  cursor: crosshair;
+  display: block;
+}
+
+/* Hue slider */
+.hue-track {
+  position: relative; height: 14px;
+  border-radius: 7px;
+  background: linear-gradient(to right,
+    #ff0000,#ffff00,#00ff00,#00ffff,#0000ff,#ff00ff,#ff0000);
+  cursor: pointer;
+}
+.hue-thumb {
+  position: absolute; top: 50%; transform: translate(-50%,-50%);
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: transparent;
+  pointer-events: none;
+  box-shadow: 0 0 3px #0004;
+}
+
+/* RGB sliders */
+.rgb-row { display: flex; align-items: center; gap: 8px; }
+.rgb-label { font-size: 12px; color: #aaa; width: 12px; }
+.rgb-slider-wrap {
+  flex: 1; height: 12px; border-radius: 6px;
+  position: relative; cursor: pointer;
+}
+.rgb-slider-fill { height: 100%; border-radius: 6px; position: absolute; top:0; left:0; right:0; }
+.rgb-thumb {
+  position: absolute; top: 50%; transform: translate(-50%,-50%);
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid #fff; background: transparent;
+  pointer-events: none; box-shadow: 0 0 3px #0004;
+}
+.rgb-num {
+  width: 38px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  color: #222;
+  font-size: 12px;
+  text-align: center;
+  padding: 3px 4px;
+}
+.rgb-num:focus { outline: none; border-color: #bbb; }
+
+/* ── Recommended colors ── */
+.swatches-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 6px;
+}
+.swatch-btn {
+  aspect-ratio: 1;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+}
+.swatch-btn:hover { transform: scale(1.15); border-color: #0003; }
+.swatch-btn.active { border-color: #333; }
+.swatch-btn .swatch-label {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%; transform: translateX(-50%);
+  background: #333;
+  color: #fff;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.swatch-btn:hover .swatch-label { display: block; }
+
+.btn-reset {
+  padding: 10px;
+  background: #f0f0f0;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  color: #aaa;
+  font-size: 12px;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: all 0.15s;
+  text-align: center;
+}
+.btn-reset:hover { background: #e8e8e8; color: #444; }
+
+/* ── Apply compact ── */
+.apply-compact {
+  width: 100%;
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 10px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.apply-compact-row {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.apply-swatch {
+  width: 22px; height: 22px; border-radius: 4px; border: 1px solid #ddd; flex-shrink: 0;
+}
+.apply-color-label { font-size: 12px; color: #888; font-family: monospace; flex: 1; }
+.btn-download {
+  padding: 6px 14px;
+  background: #e8f5ee;
+  border: 1px solid #90c4a0;
+  border-radius: 6px;
+  color: #2e7d4f;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.btn-download:hover { background: #d5eed8; color: #1e6040; }
+.apply-steps {
+  font-size: 10px; color: #ccc; letter-spacing: 0.5px;
+}
+.clawd-selected { outline: 2px solid #fff; outline-offset: -1px; }
+</style>
+</head>
+<body>
+
+<h1>CLAWD CUSTOMIZER</h1>
+<p class="subtitle">Claude Code · Mascot Skin Editor</p>
+
+<div class="workspace">
+
+  <!-- ── Preview ── -->
+  <div class="preview-box">
+    <div class="preview-frame">
+      <div id="before-slot" class="clawd-box">
+        <span class="clawd-box-label">BEFORE</span>
+      </div>
+      <div style="color:#ddd;font-size:20px;padding:0 4px;align-self:center">→</div>
+      <div class="clawd-box">
+        <span class="clawd-box-label">AFTER</span>
+      <svg id="clawd-svg" xmlns="http://www.w3.org/2000/svg"
+           viewBox="0 0 128 128" width="256" height="256">
+        <g transform="translate(64,64)"><g>
+          <animateTransform attributeName="transform" type="scale"
+            values="1;1.015;1" dur="3s" repeatCount="indefinite"/>
+          <g transform="translate(-64,-64)">
+          <!-- pixel grid 16x10, each cell 8px, origin y=24 -->
+          <!-- 0011111111111100 -->
+          <!-- 0011111111111100 -->
+          <!-- 0011011111101100 -->
+          <!-- 0011011111101100 -->
+          <!-- 1111111111111111 -->
+          <!-- 1111111111111111 -->
+          <!-- 0011111111111100 -->
+          <!-- 0011111111111100 -->
+          <!-- 0001010000101000 -->
+          <!-- 0001010000101000 -->
+          <g class="clawd-body">
+            <!-- y=24 row0: cols 2-13 -->
+            <rect data-px="16-24" x="16" y="24" width="8" height="8"/><rect data-px="24-24" x="24" y="24" width="8" height="8"/><rect data-px="32-24" x="32" y="24" width="8" height="8"/><rect data-px="40-24" x="40" y="24" width="8" height="8"/><rect data-px="48-24" x="48" y="24" width="8" height="8"/><rect data-px="56-24" x="56" y="24" width="8" height="8"/><rect data-px="64-24" x="64" y="24" width="8" height="8"/><rect data-px="72-24" x="72" y="24" width="8" height="8"/><rect data-px="80-24" x="80" y="24" width="8" height="8"/><rect data-px="88-24" x="88" y="24" width="8" height="8"/><rect data-px="96-24" x="96" y="24" width="8" height="8"/><rect data-px="104-24" x="104" y="24" width="8" height="8"/>
+            <!-- y=32 row1: cols 2-13 -->
+            <rect data-px="16-32" x="16" y="32" width="8" height="8"/><rect data-px="24-32" x="24" y="32" width="8" height="8"/><rect data-px="32-32" x="32" y="32" width="8" height="8"/><rect data-px="40-32" x="40" y="32" width="8" height="8"/><rect data-px="48-32" x="48" y="32" width="8" height="8"/><rect data-px="56-32" x="56" y="32" width="8" height="8"/><rect data-px="64-32" x="64" y="32" width="8" height="8"/><rect data-px="72-32" x="72" y="32" width="8" height="8"/><rect data-px="80-32" x="80" y="32" width="8" height="8"/><rect data-px="88-32" x="88" y="32" width="8" height="8"/><rect data-px="96-32" x="96" y="32" width="8" height="8"/><rect data-px="104-32" x="104" y="32" width="8" height="8"/>
+            <!-- y=40 row2: cols 2,3,5-10,12,13 (eyes at col4=x32, col11=x88) -->
+            <rect data-px="16-40" x="16" y="40" width="8" height="8"/><rect data-px="24-40" x="24" y="40" width="8" height="8"/><rect data-px="40-40" x="40" y="40" width="8" height="8"/><rect data-px="48-40" x="48" y="40" width="8" height="8"/><rect data-px="56-40" x="56" y="40" width="8" height="8"/><rect data-px="64-40" x="64" y="40" width="8" height="8"/><rect data-px="72-40" x="72" y="40" width="8" height="8"/><rect data-px="80-40" x="80" y="40" width="8" height="8"/><rect data-px="96-40" x="96" y="40" width="8" height="8"/><rect data-px="104-40" x="104" y="40" width="8" height="8"/>
+            <!-- y=48 row3: cols 2,3,5-10,12,13 -->
+            <rect data-px="16-48" x="16" y="48" width="8" height="8"/><rect data-px="24-48" x="24" y="48" width="8" height="8"/><rect data-px="40-48" x="40" y="48" width="8" height="8"/><rect data-px="48-48" x="48" y="48" width="8" height="8"/><rect data-px="56-48" x="56" y="48" width="8" height="8"/><rect data-px="64-48" x="64" y="48" width="8" height="8"/><rect data-px="72-48" x="72" y="48" width="8" height="8"/><rect data-px="80-48" x="80" y="48" width="8" height="8"/><rect data-px="96-48" x="96" y="48" width="8" height="8"/><rect data-px="104-48" x="104" y="48" width="8" height="8"/>
+            <!-- y=56 row4: all 16 cols -->
+            <rect data-px="0-56" x="0"  y="56" width="8" height="8"/><rect data-px="8-56" x="8"  y="56" width="8" height="8"/><rect data-px="16-56" x="16" y="56" width="8" height="8"/><rect data-px="24-56" x="24" y="56" width="8" height="8"/><rect data-px="32-56" x="32" y="56" width="8" height="8"/><rect data-px="40-56" x="40" y="56" width="8" height="8"/><rect data-px="48-56" x="48" y="56" width="8" height="8"/><rect data-px="56-56" x="56" y="56" width="8" height="8"/><rect data-px="64-56" x="64" y="56" width="8" height="8"/><rect data-px="72-56" x="72" y="56" width="8" height="8"/><rect data-px="80-56" x="80" y="56" width="8" height="8"/><rect data-px="88-56" x="88" y="56" width="8" height="8"/><rect data-px="96-56" x="96" y="56" width="8" height="8"/><rect data-px="104-56" x="104" y="56" width="8" height="8"/><rect data-px="112-56" x="112" y="56" width="8" height="8"/><rect data-px="120-56" x="120" y="56" width="8" height="8"/>
+            <!-- y=64 row5: all 16 cols -->
+            <rect data-px="0-64" x="0"  y="64" width="8" height="8"/><rect data-px="8-64" x="8"  y="64" width="8" height="8"/><rect data-px="16-64" x="16" y="64" width="8" height="8"/><rect data-px="24-64" x="24" y="64" width="8" height="8"/><rect data-px="32-64" x="32" y="64" width="8" height="8"/><rect data-px="40-64" x="40" y="64" width="8" height="8"/><rect data-px="48-64" x="48" y="64" width="8" height="8"/><rect data-px="56-64" x="56" y="64" width="8" height="8"/><rect data-px="64-64" x="64" y="64" width="8" height="8"/><rect data-px="72-64" x="72" y="64" width="8" height="8"/><rect data-px="80-64" x="80" y="64" width="8" height="8"/><rect data-px="88-64" x="88" y="64" width="8" height="8"/><rect data-px="96-64" x="96" y="64" width="8" height="8"/><rect data-px="104-64" x="104" y="64" width="8" height="8"/><rect data-px="112-64" x="112" y="64" width="8" height="8"/><rect data-px="120-64" x="120" y="64" width="8" height="8"/>
+            <!-- y=72 row6: cols 2-13 -->
+            <rect data-px="16-72" x="16" y="72" width="8" height="8"/><rect data-px="24-72" x="24" y="72" width="8" height="8"/><rect data-px="32-72" x="32" y="72" width="8" height="8"/><rect data-px="40-72" x="40" y="72" width="8" height="8"/><rect data-px="48-72" x="48" y="72" width="8" height="8"/><rect data-px="56-72" x="56" y="72" width="8" height="8"/><rect data-px="64-72" x="64" y="72" width="8" height="8"/><rect data-px="72-72" x="72" y="72" width="8" height="8"/><rect data-px="80-72" x="80" y="72" width="8" height="8"/><rect data-px="88-72" x="88" y="72" width="8" height="8"/><rect data-px="96-72" x="96" y="72" width="8" height="8"/><rect data-px="104-72" x="104" y="72" width="8" height="8"/>
+            <!-- y=80 row7: cols 2-13 -->
+            <rect data-px="16-80" x="16" y="80" width="8" height="8"/><rect data-px="24-80" x="24" y="80" width="8" height="8"/><rect data-px="32-80" x="32" y="80" width="8" height="8"/><rect data-px="40-80" x="40" y="80" width="8" height="8"/><rect data-px="48-80" x="48" y="80" width="8" height="8"/><rect data-px="56-80" x="56" y="80" width="8" height="8"/><rect data-px="64-80" x="64" y="80" width="8" height="8"/><rect data-px="72-80" x="72" y="80" width="8" height="8"/><rect data-px="80-80" x="80" y="80" width="8" height="8"/><rect data-px="88-80" x="88" y="80" width="8" height="8"/><rect data-px="96-80" x="96" y="80" width="8" height="8"/><rect data-px="104-80" x="104" y="80" width="8" height="8"/>
+            <!-- y=88 row8: cols 3,5,10,12 -->
+            <rect data-px="24-88" x="24" y="88" width="8" height="8"/><rect data-px="40-88" x="40" y="88" width="8" height="8"/><rect data-px="80-88" x="80" y="88" width="8" height="8"/><rect data-px="96-88" x="96" y="88" width="8" height="8"/>
+            <!-- y=96 row9: cols 3,5,10,12 -->
+            <rect data-px="24-96" x="24" y="96" width="8" height="8"/><rect data-px="40-96" x="40" y="96" width="8" height="8"/><rect data-px="80-96" x="80" y="96" width="8" height="8"/><rect data-px="96-96" x="96" y="96" width="8" height="8"/>
+          </g>
+          <g class="clawd-eyes">
+            <!-- left eye: col4=x32, rows 2-3 -->
+            <rect data-px="32-40" x="32" y="40" width="8" height="8"/>
+            <rect data-px="32-48" x="32" y="48" width="8" height="8"/>
+            <!-- right eye: col11=x88, rows 2-3 -->
+            <rect data-px="88-40" x="88" y="40" width="8" height="8"/>
+            <rect data-px="88-48" x="88" y="48" width="8" height="8"/>
+          </g>
+          </g>
+        </g></g>
+      </svg>
+      <div id="pixelHint" style="font-size:10px;color:#bbb;letter-spacing:1px;text-align:center">Click a pixel to select</div>
+      </div><!-- /after-slot -->
+    </div>
+    <div class="preview-label">LIVE PREVIEW</div>
+    <div class="apply-compact">
+      <div class="apply-compact-row">
+        <span class="apply-swatch" id="applySwatch"></span>
+        <span class="apply-color-label" id="applyColorText">Body: #E07855 = rgb(224,120,85)</span>
+        <button class="btn-download" onclick="downloadPatch()">↓ patch_clawd.ps1</button>
+      </div>
+      <div class="apply-steps">Close Claude Code → Run script → Restart</div>
+    </div>
+  </div>
+
+  <!-- ── Controls ── -->
+  <div class="controls">
+
+    <!-- Picker tabs -->
+    <div class="picker-tabs">
+      <button class="picker-tab active" id="btnPixel" onclick="setMode('pixel',this)">Pixel</button>
+      <button class="picker-tab" id="btnAll" onclick="setMode('all',this)">Fill All</button>
+      <button class="btn-tab-reset" onclick="resetAll()">Reset</button>
+    </div>
+
+    <!-- Color Picker Card -->
+    <div class="picker-card">
+      <!-- Top row -->
+      <div class="picker-top">
+        <div class="swatch" id="curSwatch"></div>
+        <input class="hex-input" id="hexInput" maxlength="6" value="E07855">
+        <button class="btn-apply" onclick="applyHex()">✓ Apply</button>
+      </div>
+
+      <!-- Gradient canvas (body only) -->
+      <canvas class="gradient-canvas" id="gradCanvas" height="140"></canvas>
+
+      <!-- Hue slider (body only) -->
+      <div class="hue-track" id="hueTrack">
+        <div class="hue-thumb" id="hueThumb"></div>
+      </div>
+
+      <!-- RGB sliders -->
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
+        <div class="rgb-row">
+          <span class="rgb-label">R</span>
+          <div class="rgb-slider-wrap" id="rTrack">
+            <div class="rgb-slider-fill" id="rFill"></div>
+            <div class="rgb-thumb" id="rThumb"></div>
+          </div>
+          <input class="rgb-num" id="rNum" type="number" min="0" max="255" value="224">
+        </div>
+        <div class="rgb-row">
+          <span class="rgb-label">G</span>
+          <div class="rgb-slider-wrap" id="gTrack">
+            <div class="rgb-slider-fill" id="gFill"></div>
+            <div class="rgb-thumb" id="gThumb"></div>
+          </div>
+          <input class="rgb-num" id="gNum" type="number" min="0" max="255" value="120">
+        </div>
+        <div class="rgb-row">
+          <span class="rgb-label">B</span>
+          <div class="rgb-slider-wrap" id="bTrack">
+            <div class="rgb-slider-fill" id="bFill"></div>
+            <div class="rgb-thumb" id="bThumb"></div>
+          </div>
+          <input class="rgb-num" id="bNum" type="number" min="0" max="255" value="85">
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── State ──
+let target = 'body'; // 'body' | 'eye'
+let mode = 'pixel'; // 'pixel' | 'all'
+let selectedPixelEl = null;
+const colors = {
+  body: { r:224, g:120, b:85 },
+  eye:  { r:26,  g:10,  b:0  }
+};
+let hue = 0; // 0-360
+let satBrightPos = { x: 0.6, y: 0.3 }; // position in gradient canvas
+
+const PRESETS = [
+  { name:'Original',     body:'#e07855', eye:'#1a0a00' },
+  { name:'Midnight',     body:'#3a5fc8', eye:'#0a0a1a' },
+  { name:'Forest',       body:'#4a9e5c', eye:'#0a1a0a' },
+  { name:'Rose',         body:'#e05580', eye:'#1a0005' },
+  { name:'Gold',         body:'#d4a017', eye:'#1a1000' },
+  { name:'Purple',       body:'#9b45e0', eye:'#0d0a1a' },
+  { name:'Ice',          body:'#7ec8e3', eye:'#0a1015' },
+  { name:'Lava',         body:'#cc2200', eye:'#1a0000' },
+  { name:'Mint',         body:'#00c9a7', eye:'#001a15' },
+  { name:'Peach',        body:'#ffb347', eye:'#1a0a00' },
+  { name:'Steel',        body:'#708090', eye:'#0a0a0f' },
+  { name:'Pink',         body:'#ff69b4', eye:'#1a0010' },
+  { name:'Lime',         body:'#32cd32', eye:'#001a00' },
+  { name:'Teal',         body:'#008080', eye:'#001515' },
+  { name:'Crimson',      body:'#dc143c', eye:'#1a0005' },
+  { name:'Sky',          body:'#87ceeb', eye:'#0a1015' },
+];
+
+// ── DOM refs ──
+const gradCanvas= document.getElementById('gradCanvas');
+const ctx       = gradCanvas.getContext('2d');
+const hueTrack  = document.getElementById('hueTrack');
+const hueThumb  = document.getElementById('hueThumb');
+const hexInput  = document.getElementById('hexInput');
+const curSwatch = document.getElementById('curSwatch');
+
+// ── Helpers ──
+function hexToRgb(hex) {
+  hex = hex.replace('#','');
+  return { r: parseInt(hex.slice(0,2),16), g: parseInt(hex.slice(2,4),16), b: parseInt(hex.slice(4,6),16) };
+}
+function rgbToHex(r,g,b) {
+  return '#' + [r,g,b].map(v => Math.round(v).toString(16).padStart(2,'0')).join('');
+}
+function rgbToHsv(r,g,b) {
+  r/=255; g/=255; b/=255;
+  const max=Math.max(r,g,b), min=Math.min(r,g,b), d=max-min;
+  let h=0, s=max===0?0:d/max, v=max;
+  if(d>0){
+    if(max===r) h=((g-b)/d)%6;
+    else if(max===g) h=(b-r)/d+2;
+    else h=(r-g)/d+4;
+    h=h*60; if(h<0)h+=360;
+  }
+  return {h,s,v};
+}
+function hsvToRgb(h,s,v) {
+  const c=v*s, x=c*(1-Math.abs((h/60)%2-1)), m=v-c;
+  let r=0,g=0,b=0;
+  if(h<60){r=c;g=x;}else if(h<120){r=x;g=c;}
+  else if(h<180){g=c;b=x;}else if(h<240){g=x;b=c;}
+  else if(h<300){r=x;b=c;}else{r=c;b=x;}
+  return {r:Math.round((r+m)*255),g:Math.round((g+m)*255),b:Math.round((b+m)*255)};
+}
+
+// ── Eye mode max ──
+function maxVal() { return target === 'eye' ? 9 : 255; }
+
+// ── Current color getter/setter ──
+function getCurrent() { return colors[target]; }
+function setCurrent(rgb) {
+  colors[target].r = Math.round(rgb.r);
+  colors[target].g = Math.round(rgb.g);
+  colors[target].b = Math.round(rgb.b);
+}
+
+// ── Apply color to SVG + update apply section ──
+const clawdSvg = document.getElementById('clawd-svg');
+clawdSvg.addEventListener('click', e => {
+  if (mode !== 'pixel') return;
+  const rect = e.target;
+  if (rect.tagName !== 'rect') return;
+  // Deselect previous
+  if (selectedPixelEl) selectedPixelEl.classList.remove('clawd-selected');
+  selectedPixelEl = rect;
+  rect.classList.add('clawd-selected');
+  // Load this pixel's current color into picker
+  const fill = rect.style.fill || getComputedStyle(rect).fill;
+  // Parse fill to RGB
+  const tmp = document.createElement('canvas').getContext('2d');
+  tmp.fillStyle = fill;
+  const hex = tmp.fillStyle; // normalized hex or rgb
+  const rgb = hexToRgb(hex.replace('#','').length === 6 ? hex : rgbToHex(colors.body.r,colors.body.g,colors.body.b));
+  colors.body.r = rgb.r; colors.body.g = rgb.g; colors.body.b = rgb.b;
+  updateAllUI();
+});
+
+function applySVGColors() {
+  const bh = rgbToHex(colors.body.r, colors.body.g, colors.body.b);
+  // Always update eye color via CSS var
+  clawdSvg.style.setProperty('--clawd-eye', rgbToHex(colors.eye.r, colors.eye.g, colors.eye.b));
+
+  if (mode === 'all') {
+    // Apply to all body pixels
+    clawdSvg.style.setProperty('--clawd-body', bh);
+    clawdSvg.querySelectorAll('.clawd-body rect').forEach(r => r.style.fill = '');
+  } else if (mode === 'pixel' && selectedPixelEl) {
+    // Apply only to selected pixel
+    selectedPixelEl.style.fill = bh;
+  }
+
+  // Update apply section
+  document.getElementById('applySwatch').style.background = bh;
+  const {r,g,b} = colors.body;
+  document.getElementById('applyColorText').textContent = `Body: ${bh.toUpperCase()} = rgb(${r},${g},${b})`;
+}
+
+// ── Patch script generator ──
+function formatRgb10(r, g, b) {
+  // clawd_background = "rgb(0,0,0)" = 10 chars. Each component must be 0-9.
+  r = Math.min(r, 9); g = Math.min(g, 9); b = Math.min(b, 9);
+  return `rgb(${r},${g},${b})`; // always 10 chars
+}
+
+function formatRgb15(r, g, b) {
+  // Must be exactly same length as original "rgb(215,119,87)" = 15 chars
+  const s = `rgb(${r},${g},${b})`;
+  const diff = 15 - s.length;
+  if (diff === 0) return s;
+  if (diff > 0) {
+    // Pad with spaces after opening paren — CSS spec allows whitespace in rgb()
+    return `rgb(${''.padEnd(diff)}${r},${g},${b})`;
+  }
+  // diff === -1: all three components are 3-digit (100~255), making 16 chars.
+  // Reduce the SMALLEST component to 99 (2-digit) — minimal color change.
+  const m = Math.min(r, g, b);
+  if (r === m) return `rgb(${Math.min(r,99)},${g},${b})`;
+  if (g === m) return `rgb(${r},${Math.min(g,99)},${b})`;
+  return `rgb(${r},${g},${Math.min(b,99)})`;
+}
+
+function generatePS1(r, g, b, hex, er, eg, eb) {
+  const newColor = formatRgb15(r, g, b);
+  const eyeColor = formatRgb10(er, eg, eb);
+  return `# Clawd Color Patch — generated by Clawd Customizer
+# Target body color: #${hex} = rgb(${r},${g},${b})
+
+$path = "$env:USERPROFILE\\.local\\bin\\claude.exe"
+
+if (!(Test-Path $path)) {
+    Write-Host "ERROR: claude.exe not found at: $path"
+    exit 1
+}
+$proc = Get-Process -Name "claude" -ErrorAction SilentlyContinue
+if ($proc) {
+    Write-Host "WARNING: Claude Code is still running. Close it first!"
+    exit 1
+}
+
+# Backup if not already backed up
+$backup = $path + ".original"
+if (!(Test-Path $backup)) {
+    Write-Host "Creating backup: $backup"
+    Copy-Item $path $backup
+} else {
+    Write-Host "Backup already exists: $backup"
+}
+
+Write-Host "Reading binary..."
+$bytes = [System.IO.File]::ReadAllBytes($path)
+$enc   = [System.Text.Encoding]::GetEncoding(28591)
+$str   = $enc.GetString($bytes)
+
+# Detect current body color (dynamic — works even if already patched before)
+$marker = 'clawd_body:"rgb('
+$idx = $str.IndexOf($marker)
+if ($idx -lt 0) {
+    Write-Host "ERROR: clawd_body color definition not found in binary."
+    exit 1
+}
+$vStart = $idx + $marker.Length
+$vEnd   = $str.IndexOf(')', $vStart)
+$currentColor = 'rgb(' + $str.Substring($vStart, $vEnd - $vStart) + ')'
+$targetLen    = $currentColor.Length
+Write-Host "Current color : $currentColor  ($targetLen bytes)"
+
+# New color — same byte length
+$newColor = "${newColor}"
+if ($newColor.Length -ne $targetLen) {
+    Write-Host "ERROR: length mismatch ($($newColor.Length) vs $targetLen). Please report this."
+    exit 1
+}
+Write-Host "Replacing with: $newColor  ($($newColor.Length) bytes)"
+
+# Replace all occurrences of the current color that appear in clawd_body context
+$newBytes = $enc.GetBytes($newColor)
+$count = 0
+$from  = 0
+while ($true) {
+    $found = $str.IndexOf($currentColor, $from)
+    if ($found -lt 0) { break }
+    # Verify it's a clawd_body definition (look back up to 25 chars)
+    $ctxStart = [Math]::Max(0, $found - 25)
+    $ctx = $str.Substring($ctxStart, $found - $ctxStart)
+    if ($ctx.Contains('clawd_body')) {
+        for ($i = 0; $i -lt $newBytes.Length; $i++) { $bytes[$found + $i] = $newBytes[$i] }
+        $count++
+        Write-Host "  Patched offset $found"
+    }
+    $from = $found + 1
+}
+
+if ($count -eq 0) {
+    Write-Host "WARNING: No occurrences patched. Binary may already use a non-rgb() format."
+    exit 1
+}
+
+
+# ── Patch eye (clawd_background) color ──
+$eyeColor = "${eyeColor}"
+Write-Host ""
+Write-Host "Patching eye color: $eyeColor  ($($eyeColor.Length) bytes)"
+$bgMarker = 'clawd_background:"rgb('
+$eyeCount = 0
+$from2 = 0
+while ($true) {
+    $found2 = $str.IndexOf($bgMarker, $from2)
+    if ($found2 -lt 0) { break }
+    $vS2 = $found2 + $bgMarker.Length
+    $vE2 = $str.IndexOf(')', $vS2)
+    $curBg = 'rgb(' + $str.Substring($vS2, $vE2 - $vS2) + ')'
+    if ($curBg.Length -eq $eyeColor.Length) {
+        $eyeBytes = $enc.GetBytes($eyeColor)
+        $repPos = $found2 + ($bgMarker.Length - 4)
+        for ($i = 0; $i -lt $eyeBytes.Length; $i++) { $bytes[$repPos + $i] = $eyeBytes[$i] }
+        $eyeCount++
+        Write-Host "  Patched eye offset $found2"
+    } else {
+        Write-Host "  WARNING: length mismatch at $found2 ($($curBg.Length) vs $($eyeColor.Length)), skipping"
+    }
+    $from2 = $found2 + 1
+}
+Write-Host "Eye patches: $eyeCount"
+
+Write-Host ""
+Write-Host "Writing patched binary..."
+[System.IO.File]::WriteAllBytes($path, $bytes)
+Write-Host ""
+Write-Host "Done! Restart Claude Code to see your custom color."
+Write-Host "Body color: #${hex}  rgb(${r},${g},${b})"
+Write-Host "Eye color:  $eyeColor (clamped to 0-9 per channel)"
+Write-Host "To revert:  copy \`"$backup\`" to \`"$path\`""
+`;
+}
+
+function downloadPatch() {
+  const {r,g,b} = colors.body;
+  const {r:er, g:eg, b:eb} = colors.eye;
+  const hex = rgbToHex(r,g,b).replace('#','').toUpperCase();
+  const script = generatePS1(r, g, b, hex, er, eg, eb);
+  const blob = new Blob([script], {type: 'text/plain'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'patch_clawd.ps1'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── Draw gradient canvas ──
+function drawGradient() {
+  const w = gradCanvas.width, h = gradCanvas.height;
+  // White to hue color (left to right)
+  const hueColor = `hsl(${hue},100%,50%)`;
+  const gradH = ctx.createLinearGradient(0,0,w,0);
+  gradH.addColorStop(0,'#fff');
+  gradH.addColorStop(1,hueColor);
+  ctx.fillStyle = gradH;
+  ctx.fillRect(0,0,w,h);
+  // Black overlay (top to bottom)
+  const gradV = ctx.createLinearGradient(0,0,0,h);
+  gradV.addColorStop(0,'rgba(0,0,0,0)');
+  gradV.addColorStop(1,'#000');
+  ctx.fillStyle = gradV;
+  ctx.fillRect(0,0,w,h);
+}
+
+function resizeCanvas() {
+  gradCanvas.width = gradCanvas.offsetWidth;
+  drawGradient();
+  updateAllUI();
+}
+
+// ── Update UI from color ──
+function updateAllUI() {
+  const c = getCurrent();
+  const hex = rgbToHex(c.r,c.g,c.b).replace('#','').toUpperCase();
+  hexInput.value = hex;
+  curSwatch.style.background = '#'+hex;
+
+  // RGB nums & sliders
+  document.getElementById('rNum').value = c.r;
+  document.getElementById('gNum').value = c.g;
+  document.getElementById('bNum').value = c.b;
+  updateRGBSliders(c.r,c.g,c.b);
+
+  // HSV → hue + canvas position
+  const hsv = rgbToHsv(c.r,c.g,c.b);
+  hue = hsv.h;
+  satBrightPos = { x: hsv.s, y: 1-hsv.v };
+  updateHueThumb();
+  drawGradient();
+  updateGradCursor();
+}
+
+function updateRGBSliders(r,g,b) {
+  const max = maxVal();
+  const rm = max, gm = max, bm = max;
+  document.getElementById('rFill').style.background=`linear-gradient(to right,rgb(0,${g},${b}),rgb(${rm},${g},${b}))`;
+  document.getElementById('rThumb').style.left = (r/max*100)+'%';
+  document.getElementById('gFill').style.background=`linear-gradient(to right,rgb(${r},0,${b}),rgb(${r},${gm},${b}))`;
+  document.getElementById('gThumb').style.left = (g/max*100)+'%';
+  document.getElementById('bFill').style.background=`linear-gradient(to right,rgb(${r},${g},0),rgb(${r},${g},${bm}))`;
+  document.getElementById('bThumb').style.left = (b/max*100)+'%';
+  // Update num input max
+  ['rNum','gNum','bNum'].forEach(id => document.getElementById(id).max = max);
+}
+
+function updateHueThumb() {
+  hueThumb.style.left = (hue/360*100)+'%';
+}
+
+function updateGradCursor() {
+  // Draw crosshair on canvas
+  drawGradient();
+  const w=gradCanvas.width, h=gradCanvas.height;
+  const cx2=satBrightPos.x*w, cy2=satBrightPos.y*h;
+  ctx.beginPath();
+  ctx.arc(cx2,cy2,6,0,Math.PI*2);
+  ctx.strokeStyle='#fff';
+  ctx.lineWidth=2;
+  ctx.stroke();
+}
+
+// ── Gradient canvas click/drag ──
+let draggingGrad=false;
+function pickFromCanvas(e) {
+  const rect=gradCanvas.getBoundingClientRect();
+  const x=Math.max(0,Math.min(1,(e.clientX-rect.left)/rect.width));
+  const y=Math.max(0,Math.min(1,(e.clientY-rect.top)/rect.height));
+  satBrightPos={x,y};
+  // HSV: h=hue, s=x, v=1-y
+  const rgb=hsvToRgb(hue,x,1-y);
+  setCurrent(rgb);
+  updateAllUI();
+  applySVGColors();
+}
+gradCanvas.addEventListener('mousedown',e=>{draggingGrad=true;pickFromCanvas(e);});
+document.addEventListener('mousemove',e=>{if(draggingGrad)pickFromCanvas(e);});
+document.addEventListener('mouseup',()=>draggingGrad=false);
+
+// ── Hue slider ──
+let draggingHue=false;
+function pickHue(e) {
+  const rect=hueTrack.getBoundingClientRect();
+  hue=Math.max(0,Math.min(360,(e.clientX-rect.left)/rect.width*360));
+  updateHueThumb();
+  drawGradient();
+  // Update color from new hue + existing sat/bright
+  const rgb=hsvToRgb(hue,satBrightPos.x,1-satBrightPos.y);
+  setCurrent(rgb);
+  updateAllUI();
+  applySVGColors();
+}
+hueTrack.addEventListener('mousedown',e=>{draggingHue=true;pickHue(e);});
+document.addEventListener('mousemove',e=>{if(draggingHue)pickHue(e);});
+document.addEventListener('mouseup',()=>draggingHue=false);
+
+// ── RGB sliders ──
+function makeRGBSlider(trackId, channel) {
+  const track = document.getElementById(trackId);
+  let dragging=false;
+  function pick(e){
+    const max=maxVal();
+    const rect=track.getBoundingClientRect();
+    const v=Math.round(Math.max(0,Math.min(max,(e.clientX-rect.left)/rect.width*max)));
+    colors[target][channel]=v;
+    document.getElementById(channel+'Num').value=v;
+    updateAllUI();
+    applySVGColors();
+  }
+  track.addEventListener('mousedown',e=>{dragging=true;pick(e);});
+  document.addEventListener('mousemove',e=>{if(dragging)pick(e);});
+  document.addEventListener('mouseup',()=>dragging=false);
+  document.getElementById(channel+'Num').addEventListener('input',e=>{
+    const max=maxVal();
+    const v=Math.max(0,Math.min(max,parseInt(e.target.value)||0));
+    colors[target][channel]=v;
+    updateAllUI();
+    applySVGColors();
+  });
+}
+makeRGBSlider('rTrack','r');
+makeRGBSlider('gTrack','g');
+makeRGBSlider('bTrack','b');
+
+// ── Hex input ──
+hexInput.addEventListener('input', () => {
+  const v = hexInput.value.replace(/[^0-9a-fA-F]/g,'');
+  hexInput.value = v;
+});
+hexInput.addEventListener('keydown', e => { if(e.key==='Enter') applyHex(); });
+
+function applyHex() {
+  let v = hexInput.value.replace(/[^0-9a-fA-F]/g,'');
+  if(v.length===3) v=v[0]+v[0]+v[1]+v[1]+v[2]+v[2];
+  if(v.length!==6) return;
+  const rgb=hexToRgb(v);
+  setCurrent(rgb);
+  updateAllUI();
+  applySVGColors();
+}
+
+// ── Set mode ──
+function setMode(m, btn) {
+  mode = m;
+  document.querySelectorAll('.picker-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (m === 'all') {
+    if (selectedPixelEl) selectedPixelEl.classList.remove('clawd-selected');
+    selectedPixelEl = null;
+  }
+  document.getElementById('pixelHint').style.display = m === 'pixel' ? 'block' : 'none';
+}
+
+// ── Reset ──
+function resetAll() {
+  const b=hexToRgb('#e07855'); colors.body.r=b.r; colors.body.g=b.g; colors.body.b=b.b;
+  const e=hexToRgb('#1a0a00'); colors.eye.r=e.r;  colors.eye.g=e.g;  colors.eye.b=e.b;
+  // Clear all per-pixel overrides
+  clawdSvg.querySelectorAll('rect').forEach(r => r.style.fill = '');
+  if (selectedPixelEl) selectedPixelEl.classList.remove('clawd-selected');
+  selectedPixelEl = null;
+  clawdSvg.style.setProperty('--clawd-body', '#e07855');
+  clawdSvg.style.setProperty('--clawd-eye', '#1a0a00');
+  updateAllUI();
+  applySVGColors();
+}
+
+// ── Revert script ──
+function downloadRevert() {
+  const script = `# Revert Clawd to original colors
+$path = "$env:USERPROFILE\\.local\\bin\\claude.exe"
+$backup = $path + ".original"
+if (!(Test-Path $backup)) {
+    Write-Host "ERROR: Backup not found at: $backup"
+    Write-Host "No backup found. The patch may have never been run."
+    exit 1
+}
+$proc = Get-Process -Name "claude" -ErrorAction SilentlyContinue
+if ($proc) {
+    Write-Host "WARNING: Claude Code is still running. Close it first!"
+    exit 1
+}
+Write-Host "Reverting to original..."
+Copy-Item $backup $path -Force
+Write-Host "Done! Restart Claude Code."
+`;
+  const blob = new Blob([script], {type: 'text/plain'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'revert_clawd.ps1'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── Init ──
+window.addEventListener('resize', resizeCanvas);
+setTimeout(()=>{
+  resizeCanvas();
+  const b=hexToRgb('#e07855'); colors.body.r=b.r; colors.body.g=b.g; colors.body.b=b.b;
+  const e=hexToRgb('#1a0a00'); colors.eye.r=e.r;  colors.eye.g=e.g;  colors.eye.b=e.b;
+  updateAllUI();
+  applySVGColors();
+
+  // Build "before" SVG clone (factory original: #d77757 body, black eye)
+  const beforeSlot = document.getElementById('before-slot');
+  const beforeSvg  = clawdSvg.cloneNode(true);
+  beforeSvg.removeAttribute('id');
+  beforeSvg.setAttribute('width', '96');
+  beforeSvg.setAttribute('height', '96');
+  beforeSvg.style.setProperty('--clawd-body', '#d77757');
+  beforeSvg.style.setProperty('--clawd-eye',  '#000000');
+  beforeSvg.querySelectorAll('animateTransform').forEach(a => a.remove());
+  beforeSlot.appendChild(beforeSvg);
+
+  clawdSvg.style.cursor = 'crosshair';
+}, 50);
+</script>
+
+</body>
+</html>
