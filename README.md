@@ -6,6 +6,7 @@ Customize the body color of your Clawd and apply it directly to the Claude Code 
 🔗 **[Try it live](https://K-Jude.github.io/clawd-customizer)**
 
 ---
+![Clawd Customizer](preview.png)
 
 ## Features
 
@@ -58,3 +59,4 @@ The patch script locates the `clawd_body:"rgb(...)"` color definition inside the
 ## License
 
 MIT
+
